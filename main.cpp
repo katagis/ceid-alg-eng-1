@@ -8,12 +8,16 @@
 #include <algorithm>
 #include <ctime>
 
-#ifdef MODERNCPP
+#ifdef USE_CHRONO
+// Chrono is not available on g++ 4.4.7
 #include <chrono>
 namespace ch = std::chrono;
-#else
+#else 
+// Use Unix Time, sometimes fails. 
 #include <sys/time.h>
 #endif
+
+//#define USE_12GB_TEST
 
 #ifndef VERBOSITY
 #define VERBOSITY 1
@@ -92,7 +96,7 @@ list<node> MyBFS(const graph& Graph, node Start, node_array<int>& OutDist, node_
 				OutDist[Node] = CurrentDistance;
 				OutPred[Node] = Edge; 
 
-				OutColorArray[Edge] = CurrentDistance % 2 ? CGreen : CBlue;
+				OutColorArray[Edge] = CurrentDistance % 2 == 0 ? CGreen : CBlue;
 
 				Result.push_back(Node);
 				Queue.push(Node);
@@ -160,7 +164,7 @@ private:
 	std::vector<long long> MyTime;
 	std::vector<long long> LedaTime;
 
-#ifdef MODERNCPP
+#ifdef USE_CHRONO
 	ch::time_point<ch::system_clock> StartTime;
 	void RestartTimer() {
 		StartTime = ch::system_clock::now();
@@ -170,12 +174,14 @@ private:
 		return ch::duration_cast<ch::microseconds>(ch::system_clock::now() - StartTime).count();
 	}
 #else
-	long long StartTime;
+	long StartTime;
 
-	long long GetUnixMicros() const {
+	long GetUnixMicros() const {
 		struct timeval TimeVal;
 		struct timezone TimeZone;
-		gettimeofday(&TimeVal, &TimeZone);
+		if (gettimeofday(&TimeVal, &TimeZone)) {
+            return 0;
+        };
 		return TimeVal.tv_usec;
 	}
 
@@ -184,7 +190,11 @@ private:
 	}
 
 	long long GetCurrent() const {
-		return GetUnixMicros() - StartTime;
+        long UnixMicros = GetUnixMicros();
+        if (UnixMicros <= 0 || StartTime <= 0) {
+            return 0;
+        }
+        return UnixMicros - StartTime;
 	}
 #endif
 
@@ -194,7 +204,7 @@ private:
 		std::cout << " | Mine: " << std::setw(8) << MyT << TimestepStr
 				 << "\t| Leda: " << std::setw(8) << LedaT << TimestepStr;
 
-		long long Hi = std::max(std::max(MyT, LedaT), 1ll);
+		long long Hi = std::max(std::max(MyT, LedaT), 1LL);
 		long long Lo = std::min(MyT, LedaT);
 		
 		int Percent = 100 - std::floor(((float)Lo / Hi) * 100.f + 0.5f);
@@ -227,18 +237,30 @@ public:
 	}
 
 	void Print() {
+        bool ContainsInvalidResult = false;
 		long long MyTotal = 0;
 		long long LedaTotal = 0;
 		for (int i = 0; i < MyTime.size(); ++i) {
 			std::cout << "Test " << std::setw(2) << i << ":";
 			PrintBenchLine(MyTime[i], LedaTime[i]);
 
-			MyTotal += MyTime[i];
-			LedaTotal += LedaTime[i];
+            if (MyTime[i] > 0 && LedaTime[i] > 0) {
+                MyTotal += MyTime[i];
+                LedaTotal += LedaTime[i];
+            }
+            else {
+                ContainsInvalidResult = true;
+            }
 		}
 
 		std::cout << "\nTotals:";
 		PrintBenchLine(MyTotal, LedaTotal);
+
+        if (ContainsInvalidResult) {
+            std::cout << "\nUnix timer does not always return a valid time.\n"
+                    << "It is HIGHLY recommended to use chrono if possible for better results.\n"
+                    << "Results detected with invalid times where not included in the total.\n\n";
+        }
 	}
 };
 
@@ -329,7 +351,6 @@ int main() {
 		PassedTests &= TestGraph(Graphs[i]);
 	}
 
-
 	if (PassedTests) {
 		std::cout << "===================\nAll tests PASSED.\n\n";
 		Bench.Print();
@@ -337,9 +358,6 @@ int main() {
 	else {
 		std::cout << "===================\nAtleast one test failed.\n";
 	}
-
-
-	getchar();
 }
 
 
@@ -449,6 +467,12 @@ void GenerateTestGraphs(graph* Graphs, int Count) {
 
 	switch (Count) {
 	default:
+#ifdef USE_12GB_TEST
+	case 15:
+		Gen_Squares(Graphs[14], 15000000);
+	case 14:
+		Gen_Circle(Graphs[13], 9000000);
+#endif
 	case 13:
 		Gen_ParallelRandom<20000>(Graphs[12]);
 		// Fallthrough
