@@ -6,10 +6,13 @@
 #include <set>
 #include <array>
 #include <algorithm>
-
+#include <ctime>
 
 #ifdef MODERNCPP
 #include <chrono>
+namespace ch = std::chrono;
+#else
+#include <sys/time.h>
 #endif
 
 #ifndef VERBOSITY
@@ -151,29 +154,50 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 	return true;
 }
 
-namespace ch = std::chrono;
-
 
 struct Benchmark {
 private:
-	ch::time_point<ch::system_clock> StartTime;
-
 	std::vector<long long> MyTime;
 	std::vector<long long> LedaTime;
+
+#ifdef MODERNCPP
+	ch::time_point<ch::system_clock> StartTime;
+	void RestartTimer() {
+		StartTime = ch::system_clock::now();
+	}
 
 	long long GetCurrent() const {
 		return ch::duration_cast<ch::microseconds>(ch::system_clock::now() - StartTime).count();
 	}
-	std::string TimestepStr = " micros";
+#else
+	long long StartTime;
+
+	long long GetUnixMicros() const {
+		struct timeval TimeVal;
+		struct timezone TimeZone;
+		gettimeofday(&TimeVal, &TimeZone);
+		return TimeVal.tv_usec;
+	}
+
+	void RestartTimer() {
+		StartTime = GetUnixMicros();
+	}
+
+	long long GetCurrent() const {
+		return GetUnixMicros() - StartTime;
+	}
+#endif
 
 	void PrintBenchLine(long long MyT, long long LedaT) {
+		static std::string TimestepStr = " micros";
+
 		std::cout << " | Mine: " << std::setw(8) << MyT << TimestepStr
 				 << "\t| Leda: " << std::setw(8) << LedaT << TimestepStr;
 
 		long long Hi = std::max(std::max(MyT, LedaT), 1ll);
 		long long Lo = std::min(MyT, LedaT);
 		
-		int Percent = 100 - std::round(((float)Lo / Hi) * 100);
+		int Percent = 100 - std::floor(((float)Lo / Hi) * 100.f + 0.5f);
 		long long AbsDiff = Hi - Lo;
 
 		std::string Who = MyT < LedaT ? "Mine" : "Leda";
@@ -182,14 +206,14 @@ private:
 
 public:
 	void StartTest() {
-		StartTime = ch::system_clock::now();
+		RestartTimer();
 	}
 
 	// The leda test has finished and my test is starting
 	void SwitchTest() {
 		long long Duration = GetCurrent();
 		LedaTime.push_back(Duration);
-		StartTime = ch::system_clock::now();
+		RestartTimer();
 	}
 
 	void StopTest() {
@@ -357,7 +381,7 @@ void Gen_Circle(graph& Graph, int Size) {
 	Connect(Graph, Initial, Prev);
 }
 
-void Gen_OutSquare(graph& Graph, std::array<node, 4>& OutNodes) {
+void Gen_OutSquare(graph& Graph, node* OutNodes) {
 	OutNodes[0] = Graph.new_node();
 	for (int i = 1; i < 4; ++i) {
 		OutNodes[i] = Graph.new_node();
@@ -368,8 +392,8 @@ void Gen_OutSquare(graph& Graph, std::array<node, 4>& OutNodes) {
 
 
 void Gen_Squares(graph& Graph, int Size) {
-	std::array<node, 4> PrevSquare;
-	std::array<node, 4> NewSquare;
+	node PrevSquare[4];
+	node NewSquare[4];
 
 	Gen_OutSquare(Graph, PrevSquare);
 
@@ -402,7 +426,7 @@ void Gen_ParallelRandom(graph& Graph) {
 		}
 	}
 
-	std::srand(std::time(nullptr));
+	std::srand(std::time(NULL));
 	
 	for (int SetIndex = 0; SetIndex < 3; ++SetIndex) {
 		// Select one for each group

@@ -12,13 +12,14 @@ LINK_LEDA = -lleda
 DEF_VERBOSITY = -DVERBOSITY=$(VERB_LEVEL)
 
 LEDA_ALL = $(INCL_LEDA) $(LINK_LEDAPATH) $(LINK_LEDA)
+CPP_STANDARD = -std=c++0x
 
 all: run
 
 release:
-	$(CXX) $(CPPFILE) -o release.out $(DEF_VERBOSITY) $(LEDA_ALL) -O2
+	$(CXX) $(CPPFILE) -o release.out $(DEF_VERBOSITY) $(LEDA_ALL) -O2 $(CPP_STANDARD)
 debug:
-	$(CXX) $(CPPFILE) -o debug.out $(DEF_VERBOSITY) $(LEDA_ALL) -g
+	$(CXX) $(CPPFILE) -o debug.out $(DEF_VERBOSITY) $(LEDA_ALL) -g $(CPP_STANDARD)
 
 run: release
 	./release.out
