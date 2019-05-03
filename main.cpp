@@ -6,8 +6,8 @@
 #include <set>
 
 
-#ifdef _MSC_VER
-#define MODERN
+#ifdef MODERNCPP
+#include <chrono>
 #endif
 
 #ifndef VERBOSITY
@@ -22,9 +22,6 @@ using leda::node_array;
 using leda::edge_array;
 
 #define INT_INF 999999
-
-
-
 
 
 //
@@ -172,6 +169,56 @@ bool IsListSame(const list<node>& ListA, const list<node>& ListB) {
 	return true;
 }
 
+namespace ch = std::chrono;
+
+
+struct Benchmark {
+private:
+	ch::time_point<ch::system_clock> StartTime;
+
+	std::vector<long long> MyTime;
+	std::vector<long long> LadaTime;
+
+public:
+	void StartTest() {
+		StartTime = ch::system_clock::now();
+	}
+
+	void SwitchTest() {
+		long long Duration = GetCurrent();
+		MyTime.push_back(Duration);
+		StartTime = ch::system_clock::now();
+	}
+
+	void StopTest() {
+		long long Duration = GetCurrent();
+		LadaTime.push_back(Duration);
+	}
+
+	long long GetCurrent() const {
+		return ch::duration_cast<ch::microseconds>(ch::system_clock::now() - StartTime).count();
+	}
+
+	void Print() {
+		std::string TimestepStr = " micros";
+
+		size_t Len = std::min(MyTime.size(), LadaTime.size());
+		long long TotalDiff = 0;
+
+		for (int i = 0; i < Len; ++i) {
+			long long Diff = MyTime[i] - LadaTime[i];
+			std::cout << "\nTest " << i << ":" 
+				<< " | Mine: " << MyTime[i] << TimestepStr
+				<< "\t| Leda: " << LadaTime[i] << TimestepStr
+				<< "\t| Mine is slower by: " << Diff << TimestepStr;
+			TotalDiff += Diff;
+		}
+		std::cout << "\nTotal Difference: " << TotalDiff << TimestepStr;
+	}
+};
+
+static Benchmark Bench;
+
 bool TestGraph(const graph& Graph) {
 	if (Graph.empty()) {
 		return true;
@@ -179,12 +226,18 @@ bool TestGraph(const graph& Graph) {
 
 	list<node> MyA, MyB;
 	list<node> LedaA, LedaB;
+	bool MyResult;
+	bool LedaResult;
 
-	bool MyResult = MyIsBipartite(Graph, MyA, MyB);
-	bool LedaResult = leda::Is_Bipartite(Graph, LedaA, LedaB);
-
+	
+	Bench.StartTest();
+	MyResult = MyIsBipartite(Graph, MyA, MyB);
+	Bench.SwitchTest();
+	LedaResult = leda::Is_Bipartite(Graph, LedaA, LedaB);
+	Bench.StopTest();
+	
+	
 	const bool MatchingSize = MyA.size() == LedaA.size() && MyB.size() == LedaB.size();
-
 	const bool TestResult = MatchingSize && IsListSame(MyA, LedaA) && IsListSame(MyB, LedaB);
 
 #if VERBOSITY == 2
@@ -226,21 +279,21 @@ int main() {
 
 	if (PassedTests) {
 		std::cout << "All tests PASSED.\n";
+		Bench.Print();
 	}
 	else {
 		std::cout << "Atleast one test failed.\n";
 	}
-	
+
 
 	getchar();
 }
 
+
 void Connect(graph& Graph, const std::vector<node>& Nodes, int NodeIndex1, int NodeIndex2) {
 	Graph.new_edge(Nodes[NodeIndex1], Nodes[NodeIndex2]);
 	Graph.new_edge(Nodes[NodeIndex2], Nodes[NodeIndex1]);
-
 }
-
 
 void Gen_DebugGraph(graph& Graph) {
 	std::vector<node> Nodes;
@@ -285,7 +338,7 @@ void GraphPrint(const graph& Graph) {
 
 	node_array<int> A(Graph);
 
-	std::cerr << "Pastable to: https:dreampuf.github.io/GraphvizOnline\n";
+	std::cerr << "Pastable to: https//:dreampuf.github.io/GraphvizOnline\n";
 
 	forall_nodes(v, Graph) {
 		A[v] = i++;
