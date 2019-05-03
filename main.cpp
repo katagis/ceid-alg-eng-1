@@ -4,6 +4,8 @@
 #include <iostream>
 #include <queue>
 #include <set>
+#include <array>
+#include <algorithm>
 
 
 #ifdef MODERNCPP
@@ -11,7 +13,7 @@
 #endif
 
 #ifndef VERBOSITY
-#define VERBOSITY 2
+#define VERBOSITY 1
 #endif
 
 using leda::node;
@@ -153,9 +155,81 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 	return true;
 }
 
+namespace ch = std::chrono;
+
+
+struct Benchmark {
+private:
+	ch::time_point<ch::system_clock> StartTime;
+
+	std::vector<long long> MyTime;
+	std::vector<long long> LedaTime;
+
+	long long GetCurrent() const {
+		return ch::duration_cast<ch::microseconds>(ch::system_clock::now() - StartTime).count();
+	}
+	std::string TimestepStr = " micros";
+
+	void PrintBenchLine(long long MyT, long long LedaT) {
+		std::cout << " | Mine: " << std::setw(8) << MyT << TimestepStr
+			<< "\t| Leda: " << std::setw(8) << LedaT << TimestepStr;
+
+		long long Hi = std::max(std::max(MyT, LedaT), 1ll);
+		long long Lo = std::min(MyT, LedaT);
+		
+		int Percent = 100 - std::round(((float)Lo / Hi) * 100);
+		long long AbsDiff = Hi - Lo;
+
+		std::string Who = MyT < LedaT ? "Mine" : "Leda";
+		std::cout << " \t" << Who << " is faster by: " << Percent << "% (" << std::setw(8) << AbsDiff << TimestepStr << ")\n" ;
+	}
+
+public:
+	void StartTest() {
+		StartTime = ch::system_clock::now();
+	}
+
+	// The leda test has finished and my test is starting
+	void SwitchTest() {
+		long long Duration = GetCurrent();
+		LedaTime.push_back(Duration);
+		StartTime = ch::system_clock::now();
+	}
+
+	void StopTest() {
+		long long Duration = GetCurrent();
+		MyTime.push_back(Duration);
+	}
+
+	void PrintLast() {
+		int Index = MyTime.size() - 1;
+		PrintBenchLine(MyTime[Index], LedaTime[Index]);
+	}
+
+	void Print() {
+		long long MyTotal = 0;
+		long long LedaTotal = 0;
+		for (int i = 0; i < MyTime.size(); ++i) {
+			std::cout << "Test " << i << ":";
+			PrintBenchLine(MyTime[i], LedaTime[i]);
+
+			MyTotal += MyTime[i];
+			LedaTotal += LedaTime[i];
+		}
+
+		std::cout << "\nTotals:";
+		PrintBenchLine(MyTotal, LedaTotal);
+	}
+};
+
+static Benchmark Bench;
+
 bool IsListSame(const list<node>& ListA, const list<node>& ListB) {
+	if (ListA.size() != ListB.size()) {
+		return false;
+	}
 	std::set<node> SetA;
-	
+
 	node Node;
 	forall(Node, ListA) {
 		SetA.insert(Node);
@@ -169,56 +243,6 @@ bool IsListSame(const list<node>& ListA, const list<node>& ListB) {
 	return true;
 }
 
-namespace ch = std::chrono;
-
-
-struct Benchmark {
-private:
-	ch::time_point<ch::system_clock> StartTime;
-
-	std::vector<long long> MyTime;
-	std::vector<long long> LadaTime;
-
-public:
-	void StartTest() {
-		StartTime = ch::system_clock::now();
-	}
-
-	void SwitchTest() {
-		long long Duration = GetCurrent();
-		MyTime.push_back(Duration);
-		StartTime = ch::system_clock::now();
-	}
-
-	void StopTest() {
-		long long Duration = GetCurrent();
-		LadaTime.push_back(Duration);
-	}
-
-	long long GetCurrent() const {
-		return ch::duration_cast<ch::microseconds>(ch::system_clock::now() - StartTime).count();
-	}
-
-	void Print() {
-		std::string TimestepStr = " micros";
-
-		size_t Len = std::min(MyTime.size(), LadaTime.size());
-		long long TotalDiff = 0;
-
-		for (int i = 0; i < Len; ++i) {
-			long long Diff = MyTime[i] - LadaTime[i];
-			std::cout << "\nTest " << i << ":" 
-				<< " | Mine: " << MyTime[i] << TimestepStr
-				<< "\t| Leda: " << LadaTime[i] << TimestepStr
-				<< "\t| Mine is slower by: " << Diff << TimestepStr;
-			TotalDiff += Diff;
-		}
-		std::cout << "\nTotal Difference: " << TotalDiff << TimestepStr;
-	}
-};
-
-static Benchmark Bench;
-
 bool TestGraph(const graph& Graph) {
 	if (Graph.empty()) {
 		return true;
@@ -231,34 +255,40 @@ bool TestGraph(const graph& Graph) {
 
 	
 	Bench.StartTest();
-	MyResult = MyIsBipartite(Graph, MyA, MyB);
-	Bench.SwitchTest();
 	LedaResult = leda::Is_Bipartite(Graph, LedaA, LedaB);
+	Bench.SwitchTest();
+	MyResult = MyIsBipartite(Graph, MyA, MyB);
 	Bench.StopTest();
 	
+
+	// Both results where false, no point in checking the lists.
+	bool SameResult = MyResult == LedaResult;
 	
-	const bool MatchingSize = MyA.size() == LedaA.size() && MyB.size() == LedaB.size();
-	const bool TestResult = MatchingSize && IsListSame(MyA, LedaA) && IsListSame(MyB, LedaB);
+	bool TestResult = SameResult && (MyResult == false || (IsListSame(MyA, LedaA) && IsListSame(MyB, LedaB)));
 
 #if VERBOSITY == 2
 	std::cout << "Ret\t> My: " << MyResult << " | Leda: " << LedaResult << "\n";
-	std::cout << "Size A\t> My: " << MyA.size() << " | Leda: " << LedaA.size() << "\n";
-	std::cout << "Size B\t> My: " << MyB.size() << " | Leda: " << LedaB.size() << "\n";
+	
+	// If both calculated false we should just not print anything
+	if (MyResult || LedaResult) {
+		std::cout << "Size A\t> My: " << MyA.size() << " | Leda: " << LedaA.size() << "\n";
+		std::cout << "Size B\t> My: " << MyB.size() << " | Leda: " << LedaB.size() << "\n";
 
 
-	std::cout << "MyA  : " << MyA << "\n";
-	std::cout << "LedaA: " << LedaA << "\n";
+		std::cout << "MyA  : " << MyA << "\n";
+		std::cout << "LedaA: " << LedaA << "\n";
 
-	std::cout << "MyB  : " << MyB << "\n";
-	std::cout << "LedaB: " << LedaB << "\n";
+		std::cout << "MyB  : " << MyB << "\n";
+		std::cout << "LedaB: " << LedaB << "\n";
+	}
 #endif
 #if VERBOSITY >= 1
-	std::cout << "\nTEST RESULT: ";
 	if (TestResult){
-		std::cout << "PASS\n\n";
+		std::cout << "# pass | ";
+		Bench.PrintLast();
 	}
 	else {
-		std::cout << "FAIL\n\n";
+		std::cout << "# fail\n";
 	}
 #endif
 	return TestResult;
@@ -268,21 +298,24 @@ void GenerateTestGraphs(graph* Graphs, int Count);
 
 int main() {
 
-	graph Graphs[10];
+	graph Graphs[26];
 
-	GenerateTestGraphs(Graphs, 10);
+	GenerateTestGraphs(Graphs, 26);
+
+	std::cout << "Finished Generating Tests...\nStarting testing...\n";
 
 	bool PassedTests = true;
-	for (int i = 0; i < 10; ++i) {
+	for (int i = 0; i < 26; ++i) {
 		PassedTests &= TestGraph(Graphs[i]);
 	}
 
+
 	if (PassedTests) {
-		std::cout << "All tests PASSED.\n";
+		std::cout << "===================\nAll tests PASSED.\n\n";
 		Bench.Print();
 	}
 	else {
-		std::cout << "Atleast one test failed.\n";
+		std::cout << "===================\nAtleast one test failed.\n";
 	}
 
 
@@ -290,9 +323,14 @@ int main() {
 }
 
 
-void Connect(graph& Graph, const std::vector<node>& Nodes, int NodeIndex1, int NodeIndex2) {
+void ConnectIndex(graph& Graph, const std::vector<node>& Nodes, int NodeIndex1, int NodeIndex2) {
 	Graph.new_edge(Nodes[NodeIndex1], Nodes[NodeIndex2]);
 	Graph.new_edge(Nodes[NodeIndex2], Nodes[NodeIndex1]);
+}
+
+void Connect(graph& Graph, const node& Node1, const node& Node2) {
+	Graph.new_edge(Node1, Node2);
+	Graph.new_edge(Node2, Node1);
 }
 
 void Gen_DebugGraph(graph& Graph) {
@@ -303,27 +341,84 @@ void Gen_DebugGraph(graph& Graph) {
 		Nodes.push_back(Node);
 	}
 
-	Connect(Graph, Nodes, 0, 2);
-	Connect(Graph, Nodes, 1, 2);
-	Connect(Graph, Nodes, 2, 3);
-	Connect(Graph, Nodes, 3, 4);
-	Connect(Graph, Nodes, 3, 5);
-	Connect(Graph, Nodes, 5, 6);
+	ConnectIndex(Graph, Nodes, 0, 2);
+	ConnectIndex(Graph, Nodes, 1, 2);
+	ConnectIndex(Graph, Nodes, 2, 3);
+	ConnectIndex(Graph, Nodes, 3, 4);
+	ConnectIndex(Graph, Nodes, 3, 5);
+	ConnectIndex(Graph, Nodes, 5, 6);
+}
+
+void Gen_Circle(graph& Graph, int Size) {
+	node Initial = Graph.new_node();
+
+	node Prev = Initial;
+	for (int i = 1; i < Size; ++i) {
+		node Current = Graph.new_node();
+		Connect(Graph, Prev, Current);
+		Prev = Current;
+	}
+	Connect(Graph, Initial, Prev);
+}
+
+void Gen_OutSquare(graph& Graph, std::array<node, 4>& OutNodes) {
+	OutNodes[0] = Graph.new_node();
+	for (int i = 1; i < 4; ++i) {
+		OutNodes[i] = Graph.new_node();
+		Connect(Graph, OutNodes[i - 1], OutNodes[i]);
+	}
+	Connect(Graph, OutNodes[3], OutNodes[0]);
+}
+
+
+void Gen_Squares(graph& Graph, int Size) {
+	std::array<node, 4> PrevSquare;
+	std::array<node, 4> NewSquare;
+
+	Gen_OutSquare(Graph, PrevSquare);
+
+	for (int i = 4; i < Size; i += 4) {
+
+		Gen_OutSquare(Graph, NewSquare);
+		
+		for (int j = 0; j < 4; ++j) {
+			Connect(Graph, NewSquare[j], PrevSquare[j]);
+		}
+
+		std::swap(NewSquare, PrevSquare);
+	}
 }
 
 void GenerateTestGraphs(graph* Graphs, int Count) {
 
 	switch (Count) {
 	default:
-
+	case 9:
+		Gen_Squares(Graphs[8], 90001);
+		// Fallthrough
+	case 8:
+		Gen_Squares(Graphs[7], 90000);
+		// Fallthrough
+	case 7:
+		Gen_Squares(Graphs[6], 40000);
+		// Fallthrough
+	case 6:
+		Gen_Squares(Graphs[5], 10000);
+		// Fallthrough
+	case 5:
+		Gen_Circle(Graphs[4], 90000);
+		// Fallthrough
+	case 4:
+		Gen_Circle(Graphs[3], 90001);
+		// Fallthrough
+	case 3:
+		Gen_Circle(Graphs[2], 40001);
 		// Fallthrough
 	case 2:
-		Gen_DebugGraph(Graphs[1]);
-
+		Gen_Circle(Graphs[1], 10001);
 		// Fallthrough
 	case 1:
 		Gen_DebugGraph(Graphs[0]);
-
 		// Fallthrough
 	case 0:
 		;
@@ -331,22 +426,13 @@ void GenerateTestGraphs(graph* Graphs, int Count) {
 }
 
 void GraphPrint(const graph& Graph) {
-	int i = 0;
-
-	edge e;
-	node v;
-
-	node_array<int> A(Graph);
-
 	std::cerr << "Pastable to: https//:dreampuf.github.io/GraphvizOnline\n";
 
-	forall_nodes(v, Graph) {
-		A[v] = i++;
-	}
 	std::cerr << "digraph G {" << "\n";
+
+	edge e;
 	forall_edges(e, Graph) {
-		std::cerr << A[Graph.source(e)] << " -> " << A[Graph.target(e)] << ";" << "\n";
+		std::cerr << Graph.source(e)->id() << " -> " << Graph.target(e)->id() << ";\n";
 	}
 	std::cerr << "}" << "\n";
-	
 }
