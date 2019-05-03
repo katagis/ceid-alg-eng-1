@@ -26,14 +26,6 @@ using leda::edge_array;
 #define INT_INF 999999
 
 
-//
-// Graph: A leda graph to perform bfs on
-// Start: A leda node used as starting point for our bfs
-// OutDist: Output distance for each node
-// OutPred: Store the edge that visited each node
-// Return: All visited nodes
-//
-
 void GraphPrint(const graph& Graph);
 
 std::ostream& operator<< (std::ostream& Stream, const node& Node) {
@@ -60,6 +52,7 @@ enum Color {
 	CBlue
 };
 
+// Not actually used anywhere, since we don't need all this info to determine if graph is bipartite
 list<node> MyBFS(const graph& Graph, node Start, node_array<int>& OutDist, node_array<edge>& OutPred, edge_array<Color>& OutColorArray) {
 	list<node> Result;
 	
@@ -107,7 +100,6 @@ list<node> MyBFS(const graph& Graph, node Start, node_array<int>& OutDist, node_
 	return Result;
 }
 
-// Assumes List 
 bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 	list<node> Result;
 
@@ -139,8 +131,13 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 		}
 	}
 
+	// TODO: Implement disjointed graphs:
+	// Count nodes actually colored and select an uncolored one if not all where colored.
+
 	// Assume no non-connected nodes. 
 	// Perform a different loop to reduce cache misses when accessing PartA and PartB
+	// Also since we dont care returning anything in the lists this ensures no memory
+	// operations are done if the graph is not bipartite.
 	node Node;
 	forall_nodes(Node, Graph) {
 		if (NodeColors[Node] == CBlue) {
@@ -150,7 +147,6 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 			PartB.push_back(Node);
 		}
 	}
-
 
 	return true;
 }
@@ -172,7 +168,7 @@ private:
 
 	void PrintBenchLine(long long MyT, long long LedaT) {
 		std::cout << " | Mine: " << std::setw(8) << MyT << TimestepStr
-			<< "\t| Leda: " << std::setw(8) << LedaT << TimestepStr;
+				 << "\t| Leda: " << std::setw(8) << LedaT << TimestepStr;
 
 		long long Hi = std::max(std::max(MyT, LedaT), 1ll);
 		long long Lo = std::min(MyT, LedaT);
@@ -181,7 +177,7 @@ private:
 		long long AbsDiff = Hi - Lo;
 
 		std::string Who = MyT < LedaT ? "Mine" : "Leda";
-		std::cout << " \t" << Who << " is faster by: " << Percent << "% (" << std::setw(8) << AbsDiff << TimestepStr << ")\n" ;
+		std::cout << " \t" << Who << " is faster by: " << std::setw(2) << Percent << "% (" << std::setw(8) << AbsDiff << TimestepStr << ")\n" ;
 	}
 
 public:
@@ -202,7 +198,7 @@ public:
 	}
 
 	void PrintLast() {
-		int Index = MyTime.size() - 1;
+		size_t Index = MyTime.size() - 1;
 		PrintBenchLine(MyTime[Index], LedaTime[Index]);
 	}
 
@@ -210,7 +206,7 @@ public:
 		long long MyTotal = 0;
 		long long LedaTotal = 0;
 		for (int i = 0; i < MyTime.size(); ++i) {
-			std::cout << "Test " << i << ":";
+			std::cout << "Test " << std::setw(2) << i << ":";
 			PrintBenchLine(MyTime[i], LedaTime[i]);
 
 			MyTotal += MyTime[i];
@@ -389,10 +385,58 @@ void Gen_Squares(graph& Graph, int Size) {
 	}
 }
 
+template<int Size>
+void Gen_ParallelRandom(graph& Graph) {
+	// storing all nodes is required to allow random selection later
+	std::array<std::array<node, Size>, 4> Lgroup;
+
+	// i iterates over an L group, specifically the Lj group.
+	for (int i = 0; i < Size; ++i) {
+		
+		Lgroup[0][i] = Graph.new_node();
+		
+		for (int j = 1; j < 4; ++j) {
+			Lgroup[j][i] = Graph.new_node();
+			// Connect with the one in the previous set
+			Connect(Graph, Lgroup[j - 1][i], Lgroup[j][i]);
+		}
+	}
+
+	std::srand(std::time(nullptr));
+	
+	for (int SetIndex = 0; SetIndex < 3; ++SetIndex) {
+		// Select one for each group
+		node Selected = Lgroup[SetIndex][std::rand() % Size];
+		for (int i = 0; i < Size; ++i) {
+			// Connect it with all nodes of the next group
+			Connect(Graph, Selected, Lgroup[SetIndex + 1][i]);
+		}
+	}
+
+	for (int i = 0; i < 2; ++i) {
+		node First = Lgroup[i][std::rand() % Size];
+		node Second = Lgroup[i+2][std::rand() % Size];
+	
+		Connect(Graph, First, Second);
+	}
+}
+
 void GenerateTestGraphs(graph* Graphs, int Count) {
 
 	switch (Count) {
 	default:
+	case 13:
+		Gen_ParallelRandom<20000>(Graphs[12]);
+		// Fallthrough
+	case 12:
+		Gen_ParallelRandom<1500>(Graphs[11]);
+		// Fallthrough
+	case 11:
+		Gen_ParallelRandom<1000>(Graphs[10]);
+		// Fallthrough
+	case 10:
+		Gen_ParallelRandom<500>(Graphs[9]);
+		// Fallthrough
 	case 9:
 		Gen_Squares(Graphs[8], 90001);
 		// Fallthrough
