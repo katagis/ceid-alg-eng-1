@@ -150,6 +150,29 @@ void Gen_ParallelRandom(graph& Graph) {
 	}
 }
 
+
+void Gen_Custom(graph& Graph, int Size) {
+	// Generate two distinct circles with even nodes.
+	// Both will be bipartite.
+	Gen_Circle(Graph, Size * 2);
+	Gen_Circle(Graph, Size * 2);
+
+	// Connect one node of the first with one of the second.
+	// The resulting graph is still bipartite.
+	// first and last node is the most efficient and guaranteed to be in different circles.
+	Connect(Graph, Graph.first_node(), Graph.last_node());
+	
+
+	// select 2 random nodes from any circle and connect them
+	// there is now equal chance for the graph to be bipartite or not
+	node Random1 = Graph.choose_node();
+	node Random2 = Graph.choose_node();
+	
+	Connect(Graph, Random1, Random2);
+}
+
+
+
 // Used to hold a "test". A specific graph and a name.
 struct GraphTest {
 	graph Graph;
@@ -178,6 +201,11 @@ void GenerateTestGraphs(std::vector<GraphTest>& Tests) {
 	ADD_TEST("Groups 1000"    , Gen_ParallelRandom<1000>(G));
 	ADD_TEST("Groups 1500"    , Gen_ParallelRandom<1500>(G));
 	ADD_TEST("Groups 20000"   , Gen_ParallelRandom<20000>(G));
+
+	ADD_TEST("Bonus 400"  , Gen_Custom(G, 400));
+	ADD_TEST("Bonus 10000", Gen_Custom(G, 10000));
+	ADD_TEST("Bonus 20000", Gen_Custom(G, 20000));
+	ADD_TEST("Bonus 40000", Gen_Custom(G, 40000));
 
 #undef ADD_TEST
 }
