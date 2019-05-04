@@ -4,7 +4,7 @@
 #include <array>
 #include <ctime>
 
-//#define USE_12GB_TEST
+//#define INCLUDE_BIG_TESTS
 
 using leda::graph;
 using leda::node;
@@ -191,7 +191,15 @@ void GenerateTestGraphs(std::vector<GraphTest>& Tests) {
 	ADD_TEST("Bonus 20000", Gen_Custom(G, 20000));
 	ADD_TEST("Bonus 40000", Gen_Custom(G, 40000));
 
-	ADD_TEST("2 Cir 90000", { Gen_Circle(G, 90000); Gen_Circle(G, 90000); });
+	ADD_TEST("2 Circ 90000", { 
+		// 2 disconnected circles
+		Gen_Circle(G, 90000); 
+		Gen_Circle(G, 90000); 
+	});
+
+#ifdef INCLUDE_BIG_TESTS
+	ADD_TEST("Bonus 5000000", Gen_Custom(G, 5000000));
+#endif
 
 #undef ADD_TEST
 }
