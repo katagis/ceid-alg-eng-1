@@ -151,11 +151,26 @@ static Benchmark Bench;
 
 
 // Compares the contents of 2 lists, returns true even if the order is different
+// This modifies the lists but thats fine for our test case.
 bool IsListSame(list<node>& ListA, list<node>& ListB) {
 	if (ListA.size() != ListB.size()) {
 		return false;
 	}
 
+	ListA.sort();
+	ListB.sort();
+	
+
+	list<node>::iterator ItA;
+	list<node>::iterator ItB;
+
+	// Both iterations are guaranteed to end at the same time because the lists are confirmed to have
+	// the same size
+	for (ItA = ListA.begin(), ItB = ListB.begin(); ItA; ++ItA, ++ItB) {
+		if (*ItA != *ItB) {
+			return false;
+		}
+	}
 
 	return true;
 }
