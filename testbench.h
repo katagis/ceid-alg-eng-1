@@ -22,8 +22,29 @@ namespace ch = std::chrono;
 bool GVerbose = false;
 
 using leda::list;
+using leda::edge;
 using leda::graph;
 using leda::node;
+
+// Utility Output stream operators used for debugging...
+std::ostream& operator<< (std::ostream& Stream, const node& Node) {
+	Stream << Node->id();
+	return Stream;
+}
+
+std::ostream& operator<< (std::ostream& Stream, const edge& Edge) {
+	Stream << Edge->terminal(0) << "->" << Edge->terminal(1);
+	return Stream;
+}
+
+std::ostream& operator<< (std::ostream& Stream, list<node>& List) {
+	node Node;
+	forall(Node, List) {
+		std::cout << Node << ", ";
+	}
+	return Stream;
+}
+
 
 // Required for the test function
 bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB);
@@ -87,7 +108,7 @@ private:
 		long long Hi = std::max(MyT, LedaT);
 		long long Lo = std::max(std::min(MyT, LedaT), 1LL);
 		
-		int Percent = std::floor(((float)Hi / Lo) * 100.f + 0.5f) - 100;
+		int Percent = (int)std::floor(((float)Hi / Lo) * 100.f + 0.5f) - 100;
 		long long AbsDiff = Hi - Lo;
 
 		std::string Who = MyT < LedaT ? "Mine" : "Leda";
@@ -202,14 +223,17 @@ bool TestGraph(const graph& Graph, int TestNum = -1, const std::string& TestName
 
 	bool SameResult = MyResult == LedaResult;
 	
-	// If both results are false, skip checking the list
-	bool TestResult = SameResult && (MyResult == false || (IsListSame(MyA, LedaA) && IsListSame(MyB, LedaB)));
+	
+	// Even though our algorithm could potentially return MyB == LedaA or a different odd cycle, 
+	// no such case occured during testing.
+	// This probably because both algorithms start from node 0.
+	bool TestResult = SameResult && IsListSame(MyA, LedaA) && (MyResult == false || IsListSame(MyB, LedaB));
 
 	if (GVerbose) {
 		std::cout << "Ret\t> My: " << MyResult << " | Leda: " << LedaResult << "\n";
 		
 		// If both calculated false we should just not print anything
-		if (MyResult || LedaResult) {
+		//if (MyResult || LedaResult) {
 			std::cout << "Size A\t> My: " << MyA.size() << " | Leda: " << LedaA.size() << "\n";
 			std::cout << "Size B\t> My: " << MyB.size() << " | Leda: " << LedaB.size() << "\n";
 
@@ -219,7 +243,7 @@ bool TestGraph(const graph& Graph, int TestNum = -1, const std::string& TestName
 
 			std::cout << "MyB  : " << MyB << "\n";
 			std::cout << "LedaB: " << LedaB << "\n";
-		}
+		//}
 	}
 
 

@@ -12,24 +12,6 @@ using leda::edge;
 using leda::list;
 
 
-// Utility Output stream operators used for debugging...
-std::ostream& operator<< (std::ostream& Stream, const node& Node) {
-	Stream << Node->id();
-	return Stream;
-}
-
-std::ostream& operator<< (std::ostream& Stream, const edge& Edge) {
-	Stream << Edge->terminal(0) << "->" << Edge->terminal(1);
-	return Stream;
-}
-
-std::ostream& operator<< (std::ostream& Stream, list<node>& List) {
-	node Node;
-	forall(Node, List) {
-		std::cout << Node << ", ";
-	}
-	return Stream;
-}
 
 // Utility to "export" a graph for online viewing.
 void PrintGraph(const graph& Graph) {
@@ -57,7 +39,7 @@ void Connect(graph& Graph, const node& Node1, const node& Node2) {
 void Gen_DebugGraph(graph& Graph) {
 	std::vector<node> Nodes;
 
-	for (int i = 0; i < 7; ++i) {
+	for (int i = 0; i < 9; ++i) {
 		node Node = Graph.new_node();
 		Nodes.push_back(Node);
 	}
@@ -68,6 +50,8 @@ void Gen_DebugGraph(graph& Graph) {
 	ConnectIndex(Graph, Nodes, 3, 4);
 	ConnectIndex(Graph, Nodes, 3, 5);
 	ConnectIndex(Graph, Nodes, 5, 6);
+	ConnectIndex(Graph, Nodes, 1, 6);
+	ConnectIndex(Graph, Nodes, 7, 8);
 }
 
 // Generates a circle with Size nodes
@@ -206,6 +190,5 @@ void GenerateTestGraphs(std::vector<GraphTest>& Tests) {
 	ADD_TEST("Bonus 10000", Gen_Custom(G, 10000));
 	ADD_TEST("Bonus 20000", Gen_Custom(G, 20000));
 	ADD_TEST("Bonus 40000", Gen_Custom(G, 40000));
-
 #undef ADD_TEST
 }
