@@ -19,6 +19,16 @@ namespace ch = std::chrono;
 #include <sys/time.h>
 #endif
 
+bool GVerbose = false;
+
+using leda::list;
+using leda::graph;
+using leda::node;
+
+// Required for the test function
+bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB);
+
+
 // Struct to hold the benchmark results.
 // Implementation can switch between chrono / unix time through defining USE_CHRONO.
 // Chrono is a bit more accurate but not available on older c++ versions.
@@ -136,25 +146,21 @@ public:
 	}
 };
 
+
 static Benchmark Bench;
 
-using leda::list;
-using leda::graph;
-using leda::node;
 
 // Compares the contents of 2 lists, returns true even if the order is different
 bool IsListSame(list<node>& ListA, list<node>& ListB) {
 	if (ListA.size() != ListB.size()) {
 		return false;
 	}
-	std::set<node> SetA;
 
-	ListA.sort0();
-	ListB.sort0();
-	ListA.next_item()
 
 	return true;
 }
+
+
 
 bool TestGraph(const graph& Graph, int TestNum, const std::string& TestName) {
 	if (Graph.empty()) {

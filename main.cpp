@@ -19,8 +19,6 @@ using leda::node_array;
 using leda::edge_array;
 
 
-bool GVerbose = false;
-
 enum Color {
 	CNone,
 	CGreen,
@@ -126,86 +124,7 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 
 	return true;
 }
-/*
 
-bool IsListSame(const list<node>& ListA, const list<node>& ListB) {
-	if (ListA.size() != ListB.size()) {
-		return false;
-	}
-	std::set<node> SetA;
-
-	node Node;
-	forall(Node, ListA) {
-		SetA.insert(Node);
-	}
-
-	forall(Node, ListB) {
-		if (SetA.count(Node) == 0) {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool TestGraph(const graph& Graph, int TestNum, const std::string& TestName) {
-	if (Graph.empty()) {
-		return true;
-	}
-
-	list<node> MyA, MyB;
-	list<node> LedaA, LedaB;
-	bool MyResult;
-	bool LedaResult;
-
-	
-	Bench.StartTest();
-	LedaResult = leda::Is_Bipartite(Graph, LedaA, LedaB);
-	Bench.SwitchTest();
-	MyResult = MyIsBipartite(Graph, MyA, MyB);
-	Bench.StopTest();
-	
-
-	bool SameResult = MyResult == LedaResult;
-	
-	// If both results are false, skip checking the list
-	bool TestResult = SameResult && (MyResult == false || (IsListSame(MyA, LedaA) && IsListSame(MyB, LedaB)));
-
-	if (GVerbose) {
-		std::cout << "Ret\t> My: " << MyResult << " | Leda: " << LedaResult << "\n";
-		
-		// If both calculated false we should just not print anything
-		if (MyResult || LedaResult) {
-			std::cout << "Size A\t> My: " << MyA.size() << " | Leda: " << LedaA.size() << "\n";
-			std::cout << "Size B\t> My: " << MyB.size() << " | Leda: " << LedaB.size() << "\n";
-
-
-			std::cout << "MyA  : " << MyA << "\n";
-			std::cout << "LedaA: " << LedaA << "\n";
-
-			std::cout << "MyB  : " << MyB << "\n";
-			std::cout << "LedaB: " << LedaB << "\n";
-		}
-	}
-
-
-	const int MaxNameLen = 15;
-	std::ostringstream PaddedName;
-	PaddedName <<  ": " << TestName.substr(0, MaxNameLen - 2);
-	std::cout << "# Test " << std::setw(2) << TestNum 
-			<< std::left << std::setw(MaxNameLen) << PaddedName.str() << "| " << std::right; 
-	
-	if (TestResult){
-		std::string ResultStr = MyResult == true ? "yes" : "no ";
-		std::cout << ResultStr;
-		Bench.PrintLast();
-	}
-	else {
-		std::cout << "# Test failed. Results are different.\n";
-	}
-
-	return TestResult;
-}
-*/
 int main() {
 	graph Graphs[26];
 
