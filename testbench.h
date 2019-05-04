@@ -84,14 +84,14 @@ private:
             return;
         }
 
-		long long Hi = std::max(std::max(MyT, LedaT), 1LL);
-		long long Lo = std::min(MyT, LedaT);
+		long long Hi = std::max(MyT, LedaT);
+		long long Lo = std::max(std::min(MyT, LedaT), 1LL);
 		
-		int Percent = 100 - std::floor(((float)Lo / Hi) * 100.f + 0.5f);
+		int Percent = std::floor(((float)Hi / Lo) * 100.f + 0.5f) - 100;
 		long long AbsDiff = Hi - Lo;
 
 		std::string Who = MyT < LedaT ? "Mine" : "Leda";
-		std::cout << "\t" << Who << " is faster by: " << std::setw(2) << Percent << "% (" << std::setw(7) << AbsDiff << TimestepStr << ")\n" ;
+		std::cout << "\t" << Who << " is faster by: " << std::setw(3) << Percent << "% (" << std::setw(7) << AbsDiff << TimestepStr << ")\n" ;
 	}
 
 public:
