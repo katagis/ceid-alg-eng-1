@@ -150,58 +150,34 @@ void Gen_ParallelRandom(graph& Graph) {
 	}
 }
 
-void GenerateTestGraphs(graph* Graphs, int Count) {
+// Used to hold a "test". A specific graph and a name.
+struct GraphTest {
+	graph Graph;
+	std::string Name;
 
-	switch (Count) {
-	default:
-#ifdef USE_12GB_TEST
-    // These tests are too big to run on the remote test environment
-    // I tested them locally and the results are comparable with the smaller tests
-	case 15:
-		Gen_Squares(Graphs[14], 15000000);
-	case 14:
-		Gen_Circle(Graphs[13], 9000000);
-#endif
-	case 13:
-		Gen_ParallelRandom<20000>(Graphs[12]);
-		// Fallthrough
-	case 12:
-		Gen_ParallelRandom<1500>(Graphs[11]);
-		// Fallthrough
-	case 11:
-		Gen_ParallelRandom<1000>(Graphs[10]);
-		// Fallthrough
-	case 10:
-		Gen_ParallelRandom<500>(Graphs[9]);
-		// Fallthrough
-	case 9:
-		Gen_Squares(Graphs[8], 90001);
-		// Fallthrough
-	case 8:
-		Gen_Squares(Graphs[7], 90000);
-		// Fallthrough
-	case 7:
-		Gen_Squares(Graphs[6], 40000);
-		// Fallthrough
-	case 6:
-		Gen_Squares(Graphs[5], 10000);
-		// Fallthrough
-	case 5:
-		Gen_Circle(Graphs[4], 90000);
-		// Fallthrough
-	case 4:
-		Gen_Circle(Graphs[3], 90001);
-		// Fallthrough
-	case 3:
-		Gen_Circle(Graphs[2], 40001);
-		// Fallthrough
-	case 2:
-		Gen_Circle(Graphs[1], 10001);
-		// Fallthrough
-	case 1:
-		Gen_DebugGraph(Graphs[0]);
-		// Fallthrough
-	case 0:
-		;
-	}
+	GraphTest(const std::string& InName)
+		: Name(InName) {}
+};
+
+// Adds tests to the vector.
+void GenerateTestGraphs(std::vector<GraphTest>& Tests) {
+#define ADD_TEST(Name, Code) do{ Tests.push_back(GraphTest(Name)); graph& G = Tests.back().Graph; Code; }while(0)
+
+	ADD_TEST("Debug Case"     , Gen_DebugGraph(G));
+
+	ADD_TEST("Squares 10000"  , Gen_Squares(G, 10000));
+	ADD_TEST("Squares 40000"  , Gen_Squares(G, 40000));
+	ADD_TEST("Squares 90000"  , Gen_Squares(G, 90000));
+
+	ADD_TEST("Circle 10001"   , Gen_Circle(G, 10001));
+	ADD_TEST("Circle 40001"   , Gen_Circle(G, 40001));
+	ADD_TEST("Circle 90001"   , Gen_Circle(G, 90001));
+	ADD_TEST("Circle 90000"   , Gen_Circle(G, 90000));
+
+	ADD_TEST("Groups 500"     , Gen_ParallelRandom<500>(G));
+	ADD_TEST("Groups 1000"    , Gen_ParallelRandom<1000>(G));
+	ADD_TEST("Groups 1500"    , Gen_ParallelRandom<1500>(G));
+	ADD_TEST("Groups 20000"   , Gen_ParallelRandom<20000>(G));
+
+#undef ADD_TEST
 }

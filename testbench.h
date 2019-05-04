@@ -96,6 +96,11 @@ private:
 
 public:
 
+	void Reset() {
+		MyTime.clear();
+		LedaTime.clear();
+	}
+
 	void StartTest() {
 		RestartTimer();
 	}
@@ -177,7 +182,7 @@ bool IsListSame(list<node>& ListA, list<node>& ListB) {
 
 
 
-bool TestGraph(const graph& Graph, int TestNum, const std::string& TestName) {
+bool TestGraph(const graph& Graph, int TestNum = -1, const std::string& TestName = "") {
 	if (Graph.empty()) {
 		return true;
 	}
@@ -193,7 +198,7 @@ bool TestGraph(const graph& Graph, int TestNum, const std::string& TestName) {
 	Bench.SwitchTest();
 	MyResult = MyIsBipartite(Graph, MyA, MyB);
 	Bench.StopTest();
-	
+
 
 	bool SameResult = MyResult == LedaResult;
 	
@@ -218,7 +223,7 @@ bool TestGraph(const graph& Graph, int TestNum, const std::string& TestName) {
 	}
 
 
-	const int MaxNameLen = 15;
+	const int MaxNameLen = 16;
 	std::ostringstream PaddedName;
 	PaddedName <<  ": " << TestName.substr(0, MaxNameLen - 2);
 	std::cout << "# Test " << std::setw(2) << TestNum 

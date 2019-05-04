@@ -108,8 +108,7 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 	// TODO: Implement disjointed graphs:
 	// Count nodes actually colored and select an uncolored one if not all where colored.
 
-	// Assume no non-connected nodes. 
-	// Perform a different loop to reduce cache misses when accessing PartA and PartB
+	// Perform a different loop for results to reduce cache misses when accessing PartA and PartB
 	// Also since we dont care returning anything in the lists this ensures no memory
 	// operations are done if the graph is not bipartite.
 	node Node;
@@ -126,14 +125,17 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 }
 
 int main() {
-	graph Graphs[26];
+	std::vector<GraphTest> Tests;
 
-	GenerateTestGraphs(Graphs, 26);
+	std::cout << "Generating Tests...\n";
+
+	GenerateTestGraphs(Tests);
+
 	std::cout << "Finished Generating Tests...\nStarting testing...\n";
 
 	bool PassedTests = true;
-	for (int i = 0; i < 26; ++i) {
-		PassedTests &= TestGraph(Graphs[i], i, "some test");
+	for (int i = 0; i < Tests.size(); ++i) {
+		PassedTests &= TestGraph(Tests[i].Graph, i, Tests[i].Name);
 	}
 
 	if (PassedTests) {
