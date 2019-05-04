@@ -232,26 +232,25 @@ bool TestGraph(const graph& Graph, int TestNum = -1, const std::string& TestName
 	if (GVerbose) {
 		std::cout << "Ret\t> My: " << MyResult << " | Leda: " << LedaResult << "\n";
 		
-		// If both calculated false we should just not print anything
-		//if (MyResult || LedaResult) {
-			std::cout << "Size A\t> My: " << MyA.size() << " | Leda: " << LedaA.size() << "\n";
-			std::cout << "Size B\t> My: " << MyB.size() << " | Leda: " << LedaB.size() << "\n";
+		std::cout << "Size A\t> My: " << MyA.size() << " | Leda: " << LedaA.size() << "\n";
+		std::cout << "Size B\t> My: " << MyB.size() << " | Leda: " << LedaB.size() << "\n";
 
 
-			std::cout << "MyA  : " << MyA << "\n";
-			std::cout << "LedaA: " << LedaA << "\n";
+		std::cout << "MyA  : " << MyA << "\n";
+		std::cout << "LedaA: " << LedaA << "\n";
 
-			std::cout << "MyB  : " << MyB << "\n";
-			std::cout << "LedaB: " << LedaB << "\n";
-		//}
+		std::cout << "MyB  : " << MyB << "\n";
+		std::cout << "LedaB: " << LedaB << "\n";
 	}
 
 
 	const int MaxNameLen = 16;
+	
 	std::ostringstream PaddedName;
 	PaddedName <<  ": " << TestName.substr(0, MaxNameLen - 2);
+
 	std::cout << "# Test " << std::setw(2) << TestNum 
-			<< std::left << std::setw(MaxNameLen) << PaddedName.str() << "| " << std::right; 
+			  << std::left << std::setw(MaxNameLen) << PaddedName.str() << "| " << std::right; 
 	
 	if (TestResult){
 		std::string ResultStr = MyResult == true ? "yes" : "no ";

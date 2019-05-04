@@ -190,5 +190,8 @@ void GenerateTestGraphs(std::vector<GraphTest>& Tests) {
 	ADD_TEST("Bonus 10000", Gen_Custom(G, 10000));
 	ADD_TEST("Bonus 20000", Gen_Custom(G, 20000));
 	ADD_TEST("Bonus 40000", Gen_Custom(G, 40000));
+
+	ADD_TEST("2 Cir 90000", { Gen_Circle(G, 90000); Gen_Circle(G, 90000); });
+
 #undef ADD_TEST
 }

@@ -37,7 +37,6 @@ void IterateBack(const graph& Graph, list<node>& FillCircle, node_array<edge>& F
 	// While instead of do {} while to ensure edges to oneself work properly.
 	while (OrigPrev != CircPrev) {
 
-		// Add both nodes to the list. 
 		// Pushing from different sides ensures we get nodes connected to each other in the correct oreder.
 		// also pushing this to front returns the exact same circle as Leda in all of the tests.
 		FillCircle.push_back(OrigPrev);
@@ -65,27 +64,32 @@ bool IsBipartiteSubgraph(const graph& Graph,
 	NodeColors[Start] = CurrentColor;
 	Queue.push(Start);
 
+	// Regular bfs.
 	while (!Queue.empty()) {
 		node Front = Queue.front();
 		Queue.pop();
 
+		// Next color to use is the inversed of the current.
 		CurrentColor = NodeColors[Front] == CBlue ? CGreen : CBlue;
 
 		edge Edge;
-
 		forall_out_edges(Edge, Front) {
 			node Node = Graph.target(Edge);
 
+			// not yet visited nodes are colored and stored
 			if (NodeColors[Node] == CNone) {
 				NodeColors[Node] = CurrentColor;
+				// Also store the edge that made us discover this node. this is used later for detecting the odd circle.
 				CameFrom[Node] = Edge;
 				Queue.push(Node);
 			}
+			// if the node has a different color we found an odd cycle.
 			else if (NodeColors[Node] != CurrentColor) {
 				OutOnFalse.clear();
 				IterateBack(Graph, OutOnFalse, CameFrom, Edge);
 				return false;
 			}
+			// else on matching color do nothing
 		}
 	}
 	return true;
@@ -108,6 +112,7 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 
 	node Node;
 	forall_nodes(Node, Graph) {
+		// make a list with the 2 subparts.
 		if (NodeColors[Node] == CBlue) {
 			PartA.push_back(Node);
 		}
@@ -115,11 +120,13 @@ bool MyIsBipartite(const graph& Graph, list<node>& PartA, list<node>& PartB) {
 			PartB.push_back(Node);
 		}
 		else {
-
+			// found a node that has not been colored. this means its a disconnected graph.
+			// find if this subgraph is Bipartite. If not return the odd circle.
 			if (!IsBipartiteSubgraph(Graph, Node, NodeColors, CameFrom, PartA)) {
 				return false;
 			}
 
+			// the subgraph is also bipartite. "PartA" has been untouched, continue coloring nodes.
 			if (NodeColors[Node] == CBlue) {
 				PartA.push_back(Node);
 			}
